@@ -43,10 +43,9 @@
 /* Private define ------------------------------------------------------------*/
 /* Private macro -------------------------------------------------------------*/
 /* Private variables ---------------------------------------------------------*/
-
+extern __IO uint8_t flag;
 /* Private function prototypes -----------------------------------------------*/
 /* Private functions ---------------------------------------------------------*/
-extern __IO int TP_ReadBuffer(uint8_t* pBuffer, uint16_t NumByteToRead);
 
 /******************************************************************************/
 /*            Cortex-M0 Processor Exceptions Handlers                         */
@@ -105,6 +104,8 @@ void SysTick_Handler(void)
 
 void EXTI4_15_IRQHandler(void)
 {
+  flag = GPIO_ReadInputDataBit(GPIOC, GPIO_Pin_10);
+  EXTI_ClearITPendingBit(EXTI_Line10);
 }
 
 

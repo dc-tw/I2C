@@ -2,12 +2,16 @@
 #include "main.h"
 #include "hw_cfg.h"
 #include "stdio.h"
+#include "func_i2c.h"
 
 /* Private typedef -----------------------------------------------------------*/
 /* Private define ------------------------------------------------------------*/
 /* Private macro -------------------------------------------------------------*/
 /* Private variables ---------------------------------------------------------*/
-uint8_t TPRx1Buffer[50] = {0x55};
+uint8_t TPRx1Buffer[50] = {0};
+uint16_t key = 1;
+extern __IO uint8_t flag;
+uint8_t WriteBuffer[50] = {0x40};
 
 /* Private function prototypes -----------------------------------------------*/
 /* Private functions ---------------------------------------------------------*/
@@ -21,7 +25,7 @@ uint8_t TPRx1Buffer[50] = {0x55};
   */
 int main(void)
 {
-  if (SysTick_Config(SystemCoreClock / 1000))
+  if (SysTick_Config(SystemCoreClock / 100000))
   {
     /* Capture error */ 
     while (1);
@@ -29,18 +33,27 @@ int main(void)
   __IO uint32_t I2C_TimeOut = 0x1000;
 
   HW_TP_Init();
-  USART_Config();
+  //USART_Config();
+  ENABLE_GPIOC_5_8();
+  
+ 
 
+  EXTI4_15_Config();
+  TP_WriteBuffer(WriteBuffer,22);
+  
   while(1)
   {
-    //Delay(100);
-    TP_ReadBuffer(TPRx1Buffer, 2);
+    if(flag == 1){
     
-    printf("ok\r\n");
-   while(I2C_GetFlagStatus(I2C2, I2C_ISR_BUSY) != RESET)
-  {
-    if((I2C_TimeOut--) == 0) return sEE_TIMEOUT_UserCallback();
-  }
+    TP_ReadBuffer(TPRx1Buffer, 2);
+    key = keyin_binary(TPRx1Buffer[0],TPRx1Buffer[1]);
+    //read = GPIO_ReadInputDataBit(GPIOC, GPIO_Pin_10);
+    GPIOC->BRR = GPIO_Pin_5 | GPIO_Pin_6 | GPIO_Pin_7 | GPIO_Pin_8 ;
+    }
+    //printf("%d",read);
+    GPIOC->BSRR = (key -1) << 5;
+    
+
   }
 }
 

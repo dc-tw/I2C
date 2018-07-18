@@ -1,15 +1,20 @@
 #include "func_i2c.h"
+#include "hw_cfg_i2c.h"
 
 /* Private typedef -----------------------------------------------------------*/
 /* Private define ------------------------------------------------------------*/
 /* Private macro -------------------------------------------------------------*/
 /* Private variables ---------------------------------------------------------*/
+__IO uint8_t flag = 0;
+
 
 /* Private function prototypes -----------------------------------------------*/
 /* Private functions ---------------------------------------------------------*/
 void HW_TP_Init(void);
 void HW_TP_DeInit(void);
 __IO int TP_ReadBuffer(uint8_t* pBuffer, uint16_t NumByteToRead);
+__IO int TP_WriteBuffer(uint8_t* pBuffer, int input_number);
+
 uint32_t sEE_TIMEOUT_UserCallback(void);
 
 
@@ -20,80 +25,13 @@ uint32_t sEE_TIMEOUT_UserCallback(void);
   */
 void HW_TP_Init(void)
 { 
-  I2C_InitTypeDef  I2C_InitStructure;
-
-  /*-----------------------------------------*/   
-  GPIO_InitTypeDef  GPIO_InitStructure;
-
-  /* Configure the I2C clock source. The clock is derived from the HSI */
-  RCC_I2CCLKConfig(RCC_I2C1CLK_SYSCLK);
-
-  /* sEE_I2C_SCL_GPIO_CLK and sEE_I2C_SDA_GPIO_CLK Periph clock enable */
-  RCC_AHBPeriphClockCmd(TP_I2C_SCL_GPIO_CLK | TP_I2C_SDA_GPIO_CLK, ENABLE);
-
-  /* sEE_I2C Periph clock enable */
-  RCC_APB1PeriphClockCmd(TP_I2C_CLK, ENABLE);
-
-  /* Connect PXx to I2C_SCL*/
-  GPIO_PinAFConfig(TP_I2C_SCL_GPIO_PORT, TP_I2C_SCL_SOURCE, TP_I2C_SCL_AF);
-
-  /* Connect PXx to I2C_SDA*/
-  GPIO_PinAFConfig(TP_I2C_SDA_GPIO_PORT, TP_I2C_SDA_SOURCE, TP_I2C_SDA_AF);
-
-  /* GPIO configuration */
-  /* Configure sEE_I2C pins: SCL */
-  GPIO_InitStructure.GPIO_Pin = GPIO_Pin_6;
-  GPIO_InitStructure.GPIO_Mode = GPIO_Mode_AF;
-  GPIO_InitStructure.GPIO_Speed = GPIO_Speed_50MHz;
-  GPIO_InitStructure.GPIO_OType = GPIO_OType_OD;
-  GPIO_InitStructure.GPIO_PuPd = GPIO_PuPd_NOPULL;
-  GPIO_Init(GPIOB, &GPIO_InitStructure);
-
-  /* Configure sEE_I2C pins: SDA */
-  GPIO_InitStructure.GPIO_Pin = GPIO_Pin_7;
-  GPIO_Init(GPIOB, &GPIO_InitStructure);
-  /*--------------------------------------*/
-
-  /* I2C configuration */
-  /* sEE_I2C configuration */
-  I2C_InitStructure.I2C_Mode = I2C_Mode_I2C;
-  I2C_InitStructure.I2C_AnalogFilter = I2C_AnalogFilter_Enable;
-  I2C_InitStructure.I2C_DigitalFilter = 0x00;
-  I2C_InitStructure.I2C_OwnAddress1 = 0x00;
-  I2C_InitStructure.I2C_Ack = I2C_Ack_Enable;
-  I2C_InitStructure.I2C_AcknowledgedAddress = I2C_AcknowledgedAddress_7bit;
-  I2C_InitStructure.I2C_Timing = 0x20302E37;//TP_I2C_TIMING;
-  
-  /* Apply sEE_I2C configuration after enabling it */
-  I2C_Init(TP_I2C, &I2C_InitStructure);
-   
-  /* sEE_I2C Peripheral Enable */
-  I2C_Cmd(TP_I2C, ENABLE);    
+  i2c1_lowlevel_cfg();
+  i2c_Init_cfg();
 }
 
 void HW_TP_DeInit(void)
 {
-  GPIO_InitTypeDef  GPIO_InitStructure;
-
-  /* sEE_I2C Peripheral Disable */
-  I2C_Cmd(TP_I2C, DISABLE);
-
-  /* sEE_I2C DeInit */
-  I2C_DeInit(TP_I2C);
-
-  /* sEE_I2C Periph clock disable */
-  RCC_APB1PeriphClockCmd(TP_I2C_CLK, DISABLE);
-
-  /* GPIO configuration */
-  /* Configure sEE_I2C pins: SCL */
-  GPIO_InitStructure.GPIO_Pin = TP_I2C_SCL_PIN;
-  GPIO_InitStructure.GPIO_Mode = GPIO_Mode_IN;
-  GPIO_InitStructure.GPIO_PuPd = GPIO_PuPd_NOPULL;
-  GPIO_Init(TP_I2C_SCL_GPIO_PORT, &GPIO_InitStructure);
-
-  /* Configure sEE_I2C pins: SDA */
-  GPIO_InitStructure.GPIO_Pin = TP_I2C_SDA_PIN;
-  GPIO_Init(TP_I2C_SDA_GPIO_PORT, &GPIO_InitStructure);
+  i2c_DeInit_cfg();
 }
 
 
@@ -103,33 +41,33 @@ __IO int TP_ReadBuffer(uint8_t* pBuffer, uint16_t NumByteToRead)
 {
   uint32_t I2C_TimeOut = 0x2000;
    /* Test on BUSY Flag */
-  while(I2C_GetFlagStatus(TP_I2C, I2C_ISR_BUSY) != RESET)
+  while(I2C_GetFlagStatus(I2C_ON, I2C_ISR_BUSY) != RESET)
   {
     if((I2C_TimeOut--) == 0) 
-      return sEE_TIMEOUT_UserCallback();
+      return i2c_TIMEOUT_UserCallback();
   }
  
   /* Configure slave address, nbytes, reload, end mode and start or stop generation */
-  I2C_TransferHandling(TP_I2C, TP_SLAVE_WRITE_ADDRESS, 1, I2C_SoftEnd_Mode, I2C_Generate_Start_Write);
+  I2C_TransferHandling(I2C_ON, TP_SLAVE_WRITE_ADDRESS, 1, I2C_SoftEnd_Mode, I2C_Generate_Start_Write);
 
   /* Wait until TXIS flag is set */
   I2C_TimeOut = 0x3000;//0xf000;
-  while(I2C_GetFlagStatus(TP_I2C, I2C_ISR_TXIS) == RESET)
+  while(I2C_GetFlagStatus(I2C_ON, I2C_ISR_TXIS) == RESET)
   {
     if((I2C_TimeOut--) == 0) 
       return 0;
   }
 
-  I2C_SendData(TP_I2C, 0x08);
+  I2C_SendData(I2C_ON, 0x08);
   
   I2C_TimeOut = 0x3000;//0xf000;
-  while(I2C_GetFlagStatus(TP_I2C, I2C_ISR_TC) == RESET)
+  while(I2C_GetFlagStatus(I2C_ON, I2C_ISR_TC) == RESET)
   {
     if((I2C_TimeOut--) == 0) 
       return 0;
   }
 
-  I2C_TransferHandling(TP_I2C, 0xA1, NumByteToRead, I2C_AutoEnd_Mode, I2C_Generate_Start_Read);
+  I2C_TransferHandling(I2C_ON, 0xA1, NumByteToRead, I2C_AutoEnd_Mode, I2C_Generate_Start_Read);
   
 
 
@@ -138,15 +76,15 @@ __IO int TP_ReadBuffer(uint8_t* pBuffer, uint16_t NumByteToRead)
   {   
     /* Wait until RXNE flag is set */
     I2C_TimeOut = 0x3000;
-    while(I2C_GetFlagStatus(TP_I2C, I2C_ISR_RXNE) == RESET)    
+    while(I2C_GetFlagStatus(I2C_ON, I2C_ISR_RXNE) == RESET)    
     {
-      if((I2C_TimeOut--) == 0) return -1;//sEE_TIMEOUT_UserCallback();
+      if((I2C_TimeOut--) == 0) return -1;//i2c_TIMEOUT_UserCallback();
     }
     
 
     
     /* Read data from RXDR */
-    *pBuffer = I2C_ReceiveData(TP_I2C);
+    *pBuffer = I2C_ReceiveData(I2C_ON);
     /* Point to the next location where the byte read will be saved */
     pBuffer++;
     
@@ -157,99 +95,150 @@ __IO int TP_ReadBuffer(uint8_t* pBuffer, uint16_t NumByteToRead)
   
   /* Wait until STOPF flag is set */
   I2C_TimeOut = 0x3000;
-  while(I2C_GetFlagStatus(TP_I2C, I2C_ISR_STOPF) == RESET)   
+  while(I2C_GetFlagStatus(I2C_ON, I2C_ISR_STOPF) == RESET)   
   {
     if((I2C_TimeOut--) == 0)
-      return -1; //sEE_TIMEOUT_UserCallback();
+      return -1; //i2c_TIMEOUT_UserCallback();
   }
   
   /* Clear STOPF flag */
-  I2C_ClearFlag(TP_I2C, I2C_ICR_STOPCF);
+  I2C_ClearFlag(I2C_ON, I2C_ICR_STOPCF);
 
   /* If all operations OK */
   return 0;
 }
 
-uint32_t sEE_TIMEOUT_UserCallback(void)
+__IO int TP_WriteBuffer(uint8_t* pBuffer, int input_number)
 {
-  /* Use application may try to recover the communication by resetting I2C
-    peripheral (calling the function I2C_SoftwareResetCmd()) then re-start
-    the transmission/reception from a previously stored recover point.
-    For simplicity reasons, this example only shows a basic way for errors 
-    managements which consists of stopping all the process and requiring system
-    reset. */
- GPIO_InitTypeDef  GPIO_InitStructure; 
-   
-  /* sEE_I2C Peripheral Disable */
-  I2C_Cmd(TP_I2C, DISABLE);
+    uint32_t I2C_TimeOut = 0x2000;
+   /* Test on BUSY Flag */
+  while(I2C_GetFlagStatus(I2C_ON, I2C_ISR_BUSY) != RESET)
+  {
+    if((I2C_TimeOut--) == 0) 
+      return i2c_TIMEOUT_UserCallback();
+  }
  
-  /* sEE_I2C DeInit */
-  I2C_DeInit(TP_I2C);
+  /* Configure slave address, nbytes, reload, end mode and start or stop generation */
+  I2C_TransferHandling(I2C_ON, TP_SLAVE_WRITE_ADDRESS, 1, I2C_SoftEnd_Mode, I2C_Generate_Start_Write);
 
-  /* sEE_I2C Periph clock disable */
-  RCC_APB1PeriphClockCmd(TP_I2C_CLK, DISABLE);
-    
-  /* GPIO configuration */  
-  /* Configure sEE_I2C pins: SCL */
-  GPIO_InitStructure.GPIO_Pin = TP_I2C_SCL_PIN;
-  GPIO_InitStructure.GPIO_Mode = GPIO_Mode_IN;
-  GPIO_InitStructure.GPIO_PuPd = GPIO_PuPd_NOPULL;
-  GPIO_Init(TP_I2C_SCL_GPIO_PORT, &GPIO_InitStructure);
+  /* Wait until TXIS flag is set */
+  I2C_TimeOut = 0x3000;//0xf000;
+  while(I2C_GetFlagStatus(I2C_ON, I2C_ISR_TXIS) == RESET)
+  {
+    if((I2C_TimeOut--) == 0) 
+      return 0;
+  }
 
-  /* Configure sEE_I2C pins: SDA */
-  GPIO_InitStructure.GPIO_Pin = TP_I2C_SDA_PIN;
-  GPIO_Init(TP_I2C_SDA_GPIO_PORT, &GPIO_InitStructure);
+  I2C_SendData(I2C_ON, 0xC4);
+  
+  I2C_TimeOut = 0x3000;//0xf000;
+  while(I2C_GetFlagStatus(I2C_ON, I2C_ISR_TC) == RESET)
+  {
+    if((I2C_TimeOut--) == 0) 
+      return 0;
+  }
 
-  I2C_InitTypeDef  I2C_InitStructure;
+  I2C_TransferHandling(I2C_ON, 0xA1, input_number, I2C_AutoEnd_Mode, I2C_Generate_Start_Write);
   
- /* Configure the I2C clock source. The clock is derived from the HSI */
-  RCC_I2CCLKConfig(RCC_I2C1CLK_HSI);
-    
-  /* sEE_I2C_SCL_GPIO_CLK and sEE_I2C_SDA_GPIO_CLK Periph clock enable */
-  RCC_AHBPeriphClockCmd(TP_I2C_SCL_GPIO_CLK | TP_I2C_SDA_GPIO_CLK, ENABLE);
-  
-  /* sEE_I2C Periph clock enable */
-  RCC_APB1PeriphClockCmd(TP_I2C_CLK, ENABLE);
-  
-  /* Connect PXx to I2C_SCL*/
-  GPIO_PinAFConfig(TP_I2C_SCL_GPIO_PORT, TP_I2C_SCL_SOURCE, TP_I2C_SCL_AF);
-  
-  /* Connect PXx to I2C_SDA*/
-  GPIO_PinAFConfig(TP_I2C_SDA_GPIO_PORT, TP_I2C_SDA_SOURCE, TP_I2C_SDA_AF);
-  
-  /* GPIO configuration */  
-  /* Configure sEE_I2C pins: SCL */
-  GPIO_InitStructure.GPIO_Pin = TP_I2C_SCL_PIN;
-  GPIO_InitStructure.GPIO_Mode = GPIO_Mode_AF;
-  GPIO_InitStructure.GPIO_Speed = GPIO_Speed_2MHz;
-  GPIO_InitStructure.GPIO_OType = GPIO_OType_OD;
-  GPIO_InitStructure.GPIO_PuPd = GPIO_PuPd_NOPULL;
-  GPIO_Init(TP_I2C_SCL_GPIO_PORT, &GPIO_InitStructure);
-  
-  /* Configure sEE_I2C pins: SDA */
-  GPIO_InitStructure.GPIO_Pin = TP_I2C_SDA_PIN;
-  GPIO_Init(TP_I2C_SDA_GPIO_PORT, &GPIO_InitStructure);
-  
-  /* I2C configuration */
-  /* sEE_I2C configuration */
-  I2C_InitStructure.I2C_Mode = I2C_Mode_I2C;
-  I2C_InitStructure.I2C_AnalogFilter = I2C_AnalogFilter_Enable;
-  I2C_InitStructure.I2C_DigitalFilter = 0x00;
-  I2C_InitStructure.I2C_OwnAddress1 = 0x00;
-  I2C_InitStructure.I2C_Ack = I2C_Ack_Enable;
-  I2C_InitStructure.I2C_AcknowledgedAddress = I2C_AcknowledgedAddress_7bit;
-  I2C_InitStructure.I2C_Timing = 0x20302E37;//sEE_I2C_TIMING;
-  
-  /* Apply sEE_I2C configuration after enabling it */
-  I2C_Init(TP_I2C, &I2C_InitStructure);
-   
-  /* sEE_I2C Peripheral Enable */
-  I2C_Cmd(TP_I2C, ENABLE);    
-  /* Block communication and all processes */
-  while (1)
+
+  uint8_t i = 0;
+  /* Wait until all data are received */
+  for (i=0 ; i < input_number; i++)
   {   
-  }  
+    /* Wait until RXNE flag is set */
+    I2C_TimeOut = 0x3000;
+    while(I2C_GetFlagStatus(I2C_ON, I2C_ISR_TXIS) == RESET)    
+    {
+      if((I2C_TimeOut--) == 0) return -1;//i2c_TIMEOUT_UserCallback();
+    }
+
+    /* Read data from RXDR */
+    I2C_SendData(I2C_ON, pBuffer[i]);
+
+  } 
+  
+  /* Wait until STOPF flag is set */
+  I2C_TimeOut = 0x3000;
+  while(I2C_GetFlagStatus(I2C_ON, I2C_ISR_STOPF) == RESET)   
+  {
+    if((I2C_TimeOut--) == 0)
+      return 0; //i2c_TIMEOUT_UserCallback();
+  }
+  
+  /* Clear STOPF flag */
+  I2C_ClearFlag(I2C_ON, I2C_ICR_STOPCF);
+
+  /* If all operations OK */
+  return 0;
 }
+
+
+
+uint8_t keyin_binary(uint8_t key1_8,uint8_t key9_16)
+{
+  uint8_t keyin = 1;
+  switch(key1_8)
+    {
+    case 0x01:
+      keyin = 1;
+    break;
+    case 0x02:
+      keyin = 2;
+    break;
+    case 0x04:
+      keyin = 3;
+    break;
+    case 0x08:
+      keyin = 4;
+    break;    
+    case 0x10:
+      keyin = 5;
+    break;
+    case 0x20:
+      keyin = 6;
+    break;
+    case 0x40:
+      keyin = 7;
+    break;
+    case 0x80:
+      keyin = 8;
+    break;
+    default:
+    break;
+    }
+
+  switch(key9_16)
+    {
+    case 0x01:
+      keyin = 9;
+    break;
+    case 0x02:
+      keyin = 10;
+    break;
+    case 0x04:
+      keyin = 11;
+    break;
+    case 0x08:
+      keyin = 12;
+    break;    
+    case 0x10:
+      keyin = 13;
+    break;
+    case 0x20:
+      keyin = 14;
+    break;
+    case 0x40:
+      keyin = 15;
+    break;
+    case 0x80:
+      keyin = 16;
+    break;
+    default:
+    break;
+    }
+  return keyin;
+}
+
 
 
 /************************ (C) COPYRIGHT HoyenTech *****END OF FILE****/

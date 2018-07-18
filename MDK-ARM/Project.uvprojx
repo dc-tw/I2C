@@ -410,6 +410,11 @@
               <FileType>1</FileType>
               <FilePath>..\app\func_i2c.c</FilePath>
             </File>
+            <File>
+              <FileName>hw_cfg_i2c.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\app\hw_cfg_i2c.c</FilePath>
+            </File>
           </Files>
         </Group>
         <Group>
@@ -934,6 +939,11 @@
               <FileName>func_i2c.c</FileName>
               <FileType>1</FileType>
               <FilePath>..\app\func_i2c.c</FilePath>
+            </File>
+            <File>
+              <FileName>hw_cfg_i2c.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\app\hw_cfg_i2c.c</FilePath>
             </File>
           </Files>
         </Group>
@@ -1460,6 +1470,11 @@
               <FileType>1</FileType>
               <FilePath>..\app\func_i2c.c</FilePath>
             </File>
+            <File>
+              <FileName>hw_cfg_i2c.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\app\hw_cfg_i2c.c</FilePath>
+            </File>
           </Files>
         </Group>
         <Group>
@@ -1984,6 +1999,11 @@
               <FileName>func_i2c.c</FileName>
               <FileType>1</FileType>
               <FilePath>..\app\func_i2c.c</FilePath>
+            </File>
+            <File>
+              <FileName>hw_cfg_i2c.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\app\hw_cfg_i2c.c</FilePath>
             </File>
           </Files>
         </Group>
@@ -2510,6 +2530,11 @@
               <FileType>1</FileType>
               <FilePath>..\app\func_i2c.c</FilePath>
             </File>
+            <File>
+              <FileName>hw_cfg_i2c.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\app\hw_cfg_i2c.c</FilePath>
+            </File>
           </Files>
         </Group>
         <Group>
@@ -3034,6 +3059,11 @@
               <FileName>func_i2c.c</FileName>
               <FileType>1</FileType>
               <FilePath>..\app\func_i2c.c</FilePath>
+            </File>
+            <File>
+              <FileName>hw_cfg_i2c.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\app\hw_cfg_i2c.c</FilePath>
             </File>
           </Files>
         </Group>
@@ -3560,6 +3590,11 @@
               <FileType>1</FileType>
               <FilePath>..\app\func_i2c.c</FilePath>
             </File>
+            <File>
+              <FileName>hw_cfg_i2c.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\app\hw_cfg_i2c.c</FilePath>
+            </File>
           </Files>
         </Group>
         <Group>
@@ -4085,6 +4120,11 @@
               <FileType>1</FileType>
               <FilePath>..\app\func_i2c.c</FilePath>
             </File>
+            <File>
+              <FileName>hw_cfg_i2c.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\app\hw_cfg_i2c.c</FilePath>
+            </File>
           </Files>
         </Group>
         <Group>
@@ -4609,6 +4649,11 @@
               <FileName>func_i2c.c</FileName>
               <FileType>1</FileType>
               <FilePath>..\app\func_i2c.c</FilePath>
+            </File>
+            <File>
+              <FileName>hw_cfg_i2c.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\app\hw_cfg_i2c.c</FilePath>
             </File>
           </Files>
         </Group>

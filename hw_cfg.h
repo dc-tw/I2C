@@ -48,7 +48,7 @@
 
 /* Exported macro ------------------------------------------------------------*/
 /* Exported functions ------------------------------------------------------- */
-void ENABLE_GPIOA_67(void);
+void ENABLE_GPIOC_5_8(void);
 
 void Delay(__IO uint32_t nTime);
 void TimingDelay_Decrement(void);
